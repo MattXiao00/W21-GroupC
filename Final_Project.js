@@ -123,10 +123,14 @@ export class Final_Project extends Scene {
 
         // *** Materials
         this.materials = {
-            test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+            ground_material: new Material(new defs.Textured_Phong(), {
+                ambient: 1., texture: new tiny.Texture("assets/ground_texture.jpeg")
+            }),
+            pond_material: new Material(new defs.Phong_Shader(), {
+                ambient: 0.5, specularity: 0.8, color: color(0,0,1,0.5),
+            }),
             phong: new Material(new defs.Textured_Phong(), {
-                color: color(1,1,1,1),
+                color: color(1,0,0,1),
             }),
         }
 
@@ -164,12 +168,18 @@ export class Final_Project extends Scene {
         let model_transform = Mat4.identity();
 
 
-        //Model transformation for Pond
-        model_transform = model_transform.times(Mat4.rotation(Math.PI/3,1,0,0));
-        model_transform = model_transform.times(Mat4.scale(10,10,10));
-        // this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
-        this.shapes.sheet2.draw(context, program_state, model_transform, this.materials.test.override({color: water_color}));
+        //Model transformation for Ground
+        let ground_transform = Mat4.identity();
+        ground_transform = ground_transform.times(Mat4.rotation(Math.PI/2,1,0,0));
+        ground_transform = ground_transform.times(Mat4.scale(20,20,20));
+        this.shapes.sheet.draw(context, program_state, ground_transform, this.materials.ground_material);
 
+        // //Model transformation for Pond
+        let pond_transform = Mat4.identity();
+        pond_transform = pond_transform.times(Mat4.rotation(Math.PI/2,1,0,0));
+        pond_transform = pond_transform.times(Mat4.translation(0,0,-5));
+        pond_transform = pond_transform.times(Mat4.scale(10,10,10));
+        this.shapes.sheet.draw(context, program_state, pond_transform, this.materials.pond_material);
 
         //Fish movement
         if(this.random_set==false)
@@ -197,9 +207,3 @@ export class Final_Project extends Scene {
 
     }
 }
-
-
-
-
-
-
