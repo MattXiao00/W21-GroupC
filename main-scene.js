@@ -162,8 +162,6 @@ export class Final_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
-
-
         //Pond Creation
         const initial_corner_point = vec3(-1, -1, 0);
         // These two callbacks will step along s and t of the first sheet:
@@ -180,6 +178,8 @@ export class Final_Project extends Scene {
             sheet: new defs.Grid_Patch(10, 10, row_operation, column_operation),
             sheet2: new defs.Grid_Patch(10, 10, row_operation_2, column_operation_2),
             fish1: new Shape_From_File( "assets/19414_Tiger_Shark_v1.obj" ),
+            fish2: new Shape_From_File("assets/fish2.obj"),
+            fish3: new Shape_From_File("assets/fish3.obj"),
             frame: new Shape_From_File("assets/frame1.obj"),
             plant1: new Shape_From_File("assets/High Grass.obj"),
             crab: new Shape_From_File("assets/crab.obj"),
@@ -187,6 +187,8 @@ export class Final_Project extends Scene {
             stone: new Shape_From_File("assets/stone1.obj"),
             fish_hook: new defs.Subdivision_Sphere(4),
             fishing_rod: new Shape_From_File("assets/fishing_rod.obj"),
+            level_clear: new Shape_From_File("assets/lc5.obj"),
+
         };
 
         // *** Materials
@@ -223,22 +225,30 @@ export class Final_Project extends Scene {
                 color: color(0,1,0,1),
             }),
             phong: new Material(new defs.Textured_Phong(), {
-                color: color(1,0,0,1),
+                color: color(0.5,0.5,0.2,1),
+            }),
+            level_clear: new Material(new defs.Textured_Phong(),
+            {
+                ambient:0.4,specularity:1,
+                color: color(0,0,1,1),
+            }),
+            fish_2: new Material(new defs.Textured_Phong(), {
+                color: color(0,0.2,1,1),
+            }),
+
+            fish_3: new Material(new defs.Textured_Phong(), {
+                color: color(1,215/256,0,1),
             }),
         }
 
-   
-         
-        
-
 //=================================================VARIABLE DECLARATIONS=================================================
         //Initial_camera_location
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 30, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         //Control of Fish hoard
-        this.fish_amount = 6;
+        this.fish_amount = 3;
+        this.uncaught_fish_amount = this.fish_amount;
         this.random_set = false;
-        this.initial_hoard_collision_set = false;
         this.random_numbers = new Array(this.fish_amount);
         this.random_numbers_y = new Array(this.fish_amount);       
         this.hoard_x_coord = new Array(this.fish_amount);
@@ -248,19 +258,25 @@ export class Final_Project extends Scene {
         //Catching detection/control
         this.catched = new Array(this.fish_amount);
         this.catching = false;   //when t is pressed, this var becomes true for 0.5s.
-        this.catching_cooldown = 0; //record the time that catching happens.
+        this.recorded_catching_time = 0; //record the time that catching happens.
         this.record_catching_time = true; //flag for recording time.
-        
+       
        
         //Color of fish hook
         this.fish_hook_color = 0; //0 means green and 1 means red
 
         //Initial position for hook
-        this.fish_hook_x = 0;
-        this.fish_hook_y = 0;//max:9
+        this.fish_hook_x = 0;//max:9,min:-9
+        this.fish_hook_y = 0;//max:9,min:-9
         this.rod_pos_record = vec(0,0);
         this.hook_pos_record = vec(0,0);
-
+        this.retracting = false;
+        this.hook_radius = 0.7;
+        
+        //Level change
+        this.current_level = 0;
+        this.level_finish_time = 0;
+        
     }
 //=======================================================================================================================
 
@@ -273,6 +289,8 @@ export class Final_Project extends Scene {
              counters[i]=0;
          }
          this.key_triggered_button("Move Left", ["j"], () => {
+           if(this.retracting == false)
+           {
             for(var i =0; i<4; i++)
             {
                 if(i!=0)
@@ -296,9 +314,12 @@ export class Final_Project extends Scene {
             }
             counters[0]++;
             
+        }
         });
 
         this.key_triggered_button("Move Right", ["l"], () => {
+           if(this.retracting == false)
+           {
             for(var i =0; i<4; i++)
             {
                 if(i!=1)
@@ -322,8 +343,11 @@ export class Final_Project extends Scene {
             }
             counters[1]++;
             
+        }
         });
         this.key_triggered_button("Move UP", ["i"], () => {
+            if(this.retracting == false)
+           {
             for(var i =0; i<4; i++)
             {
                 if(i!=2)
@@ -347,8 +371,11 @@ export class Final_Project extends Scene {
             }
             counters[2]++;
             
+        }
         });
         this.key_triggered_button("Move Left", ["k"], () => {
+            if(this.retracting == false)
+           {
             for(var i =0; i<4; i++)
             {
                 if(i!=3)
@@ -372,11 +399,27 @@ export class Final_Project extends Scene {
             }
             counters[3]++;
             
+        }
         });
         this.key_triggered_button("CATCH!", ["t"], () => 
         {
+            if(this.retracting==false)
+            {
             this.catching = true;
             this.record_catching_time = true;
+            }
+        });
+
+        this.key_triggered_button("CHEATING ON/OFF", ["z"], () => 
+        {
+            if(this.hook_radius==0.7)
+            {
+                this.hook_radius = 100;
+            }
+            else
+            {
+                this.hook_radius = 0.7;
+            }
         });
       
     }
@@ -387,8 +430,14 @@ export class Final_Project extends Scene {
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(this.initial_camera_location);
+            //program_state.set_camera(this.initial_camera_location);
+
         }
+        let desired_camera = Mat4.identity().times(Mat4.translation(1,31,15));
+        desired_camera = desired_camera.times(Mat4.rotation(Math.PI/40,0,1,0)).times(Mat4.inverse(Mat4.look_at(vec3(0, 10,5), vec3(0, 0, 0), vec3(0, 1, 0))));
+        let inverse_desired_camera = Mat4.inverse(desired_camera);
+        program_state.set_camera(inverse_desired_camera);
+
 
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
@@ -488,10 +537,19 @@ export class Final_Project extends Scene {
         let stone_transform3 = Mat4.identity().times(Mat4.translation(22,6,0)).times(Mat4.scale(2,3,2)).times(Mat4.rotation(-Math.PI/2,1,0,0)).times(Mat4.rotation(+6*Math.PI/5,0,0,1));
         this.shapes.stone.draw(context, program_state, stone_transform3,this.materials.stone_material);
 
-
 //=================================================INITIALIZATIONS=================================================
         if(this.random_set==false)
         {
+            if(this.current_level<=5)
+            {
+                  this.fish_amount = 3 + this.current_level;
+                  this.uncaught_fish_amount = this.fish_amount;
+            }
+            else
+            {
+                  this.fish_amount = 8;
+                  this.uncaught_fish_amount = 8 ;
+            }
             for(let i = 0; i<this.fish_amount; i++)
             {
                 var num = Math.floor(Math.random(i*i)*6) + 1; 
@@ -502,6 +560,7 @@ export class Final_Project extends Scene {
                 this.random_numbers_y[i] = num2;
 
                 this.catched[i] = false;
+                
             }
             this.random_set = true;
         }
@@ -509,16 +568,13 @@ export class Final_Project extends Scene {
         //initialization for each frame
         if(this.record_catching_time == true)
         {
-            this.catching_cooldown = t;
+            this.recorded_catching_time = t;
             this.record_catching_time = false;
         }
-        if(t - this.catching_cooldown >= 0.1)
+        if(t - this.recorded_catching_time >= 0.1)
         {
             this.catching= false;
         }
-    
-
-
 
 //=================================================FISH MOVEMENTS=================================================
         var hoard = new Array();
@@ -532,16 +588,39 @@ export class Final_Project extends Scene {
             var fish_transform ;
             if(this.catched[i]==true)
             {
-               fish_transform = Mat4.identity().times(Mat4.translation(this.hoard_x_coord[i]+0.4*Math.sin(t*Math.PI/0.01),0.3*Math.sin(this.catching_cooldown)+4*(t-this.catching_cooldown),this.hoard_y_coord[i]+0.4*Math.sin(t*Math.PI/0.01))).times(Mat4.rotation(0.2*i*Math.sin(Math.PI*t/(i+1)),0,1,0));;
+               fish_transform = Mat4.identity().times(Mat4.translation(this.hoard_x_coord[i]+0.4*Math.sin(t*Math.PI/0.01),0.3*Math.sin(this.recorded_catching_time)+4*(t-this.recorded_catching_time),this.hoard_y_coord[i]+0.4*Math.sin(t*Math.PI/0.01))).times(Mat4.rotation(0.2*i*Math.sin(Math.PI*t/(i+1)),0,1,0));;
             }
             else
             {
-                fish_transform = Mat4.identity().times(Mat4.translation(initial_x + 0.7*initial_y*Math.sin(initial_x*t/(i+1)),0.3*Math.sin(t),initial_y + 0.7*initial_x*Math.cos(initial_y*t/(i+1)))).times(Mat4.rotation(0.2*i*Math.sin(Math.PI*t/(i+1)),0,1,0));
-                this.hoard_x_coord[i] = initial_x + 0.7*initial_y*Math.sin(initial_x*t/(i+1));
-                this.hoard_y_coord[i] = initial_y + 0.7*initial_x*Math.cos(initial_y*t/(i+1));
+                if(i<=2)
+                {
+                    fish_transform = Mat4.identity().times(Mat4.translation(initial_x + 0.7*initial_y*Math.sin(initial_x*t/(i+1)),0.3*Math.sin(t),initial_y + 0.7*initial_x*Math.cos(initial_y*t/(i+1)))).times(Mat4.rotation(0.2*i*Math.sin(Math.PI*t/(i+1)),0,1,0));
+                    this.hoard_x_coord[i] = initial_x + 0.7*initial_y*Math.sin(initial_x*t/(i+1));
+                    this.hoard_y_coord[i] = initial_y + 0.7*initial_x*Math.cos(initial_y*t/(i+1));
+                } 
+                else
+                {
+                    fish_transform = Mat4.identity().times(Mat4.translation(initial_x + 0.5*initial_y*Math.sin(initial_x*2.5*i*t/(2*i+1))+Math.sin(t),0.3*Math.sin(t),initial_y + 0.6*initial_x*Math.cos(initial_y*2.5*i*t/(1.8*i+1))+Math.sin(t))).times(Mat4.rotation(0.2*i*Math.sin(Math.PI*i*t/(i+1)),0,1,0));
+                    fish_transform = fish_transform.times(Mat4.rotation(-Math.PI/2, 1, 0,0)).times(Mat4.scale(0.7,0.7,0.7));
+                    this.hoard_x_coord[i] = initial_x + 0.5*initial_y*Math.sin(initial_x*2.5*i*t/(2*i+1))+Math.sin(t);
+                    this.hoard_y_coord[i] = initial_y + 0.6*initial_x*Math.cos(initial_y*2.5*i*t/(1.8*i+1))+Math.sin(t);
+                }
             }
-            let fish_object = new collision_object(fish_transform, fish_radius);
-            hoard.push(fish_object);
+            if(i<=2)
+            {
+               let fish_object = new collision_object(fish_transform, fish_radius);
+               hoard.push(fish_object);
+            }  
+            else if(i<=5)
+            {
+               let fish_object = new collision_object(fish_transform, fish_radius*0.7);
+               hoard.push(fish_object);
+            }     
+            else
+            {
+               let fish_object = new collision_object(fish_transform, fish_radius*0.5);
+               hoard.push(fish_object);
+            }
         }
 
 
@@ -550,18 +629,29 @@ export class Final_Project extends Scene {
         {
             if(this.catched[i]!= true)
             {
-               this.shapes.fish1.draw(context, program_state, hoard[i].get_location_matrix(), this.materials.phong);
+               if(i<=2)
+               {
+                   this.shapes.fish1.draw(context, program_state, hoard[i].get_location_matrix(), this.materials.phong);
+               }
+               else if(i<=5)
+               {
+                   this.shapes.fish2.draw(context, program_state, hoard[i].get_location_matrix(), this.materials.fish_2);
+               }
+               else
+               {
+                   this.shapes.fish3.draw(context, program_state, hoard[i].get_location_matrix(), this.materials.fish_3);
+               }
             }
             else if(this.catched[i]== true && t<=this.catched_time[i]+2)
             {
-               this.shapes.fish1.draw(context, program_state, hoard[i].get_location_matrix(), this.materials.frame_material);
+                   this.shapes.fish2.draw(context, program_state, hoard[i].get_location_matrix(), this.materials.frame_material);
             }
         }
 
 
 //=================================================FISHING ROD & HOOK=================================================
          var rod_transform;
-        if(t-this.catching_cooldown > 2 || t<=2)
+        if(t-this.recorded_catching_time > 2 || t<=2)
         {
            rod_transform = Mat4.identity().times(Mat4.translation(this.fish_hook_x+12,9,-this.fish_hook_y)).times(Mat4.scale(20,10,5));
            this.rod_pos_record.x = this.fish_hook_x+12;
@@ -569,24 +659,26 @@ export class Final_Project extends Scene {
         }
         else
         {
-           rod_transform = Mat4.identity().times(Mat4.translation(this.rod_pos_record.x, 9+(t-this.catching_cooldown)*4,this.rod_pos_record.y)).times(Mat4.scale(20,10,5));
+           rod_transform = Mat4.identity().times(Mat4.translation(this.rod_pos_record.x, 9+(t-this.recorded_catching_time)*4,this.rod_pos_record.y)).times(Mat4.scale(20,10,5));
         }
         this.shapes.fishing_rod.draw(context,program_state, rod_transform, this.materials.frame_material);
 
         //Construct fish hook
-        let fish_hook_radius = 0.7;
+        let fish_hook_radius = this.hook_radius;
         let fish_hook_transform = Mat4.identity();
-        if(t-this.catching_cooldown > 2 || t<=2)
+        if(t-this.recorded_catching_time > 2 || t<=2 )
         {
            fish_hook_transform = fish_hook_transform.times(Mat4.translation(this.fish_hook_x,1,-this.fish_hook_y));
            fish_hook_transform = fish_hook_transform.times(Mat4.scale(0.2,0.2,0.2));
            this.hook_pos_record.x = this.fish_hook_x;
            this.hook_pos_record.y = -this.fish_hook_y;
+           this.retracting = false;
         }
-        else
+        else //retracting
         {
-           fish_hook_transform = fish_hook_transform.times(Mat4.translation(this.hook_pos_record.x,1+(t-this.catching_cooldown)*4,this.hook_pos_record.y));
+           fish_hook_transform = fish_hook_transform.times(Mat4.translation(this.hook_pos_record.x,1+(t-this.recorded_catching_time)*4,this.hook_pos_record.y));
            fish_hook_transform = fish_hook_transform.times(Mat4.scale(0.2,0.2,0.2));
+           this.retracting = true;
         }
         let fish_hook_object = new collision_object(fish_hook_transform, fish_hook_radius);
 
@@ -602,10 +694,16 @@ export class Final_Project extends Scene {
                 if_hook_collides_any_fish = true;//catching detection
                 if(this.catching == true)
                 {
+                    this.uncaught_fish_amount -= 1;
+                    if(this.uncaught_fish_amount==0) //<<<<===========================================reset hoard!!!
+                    {
+                        this.random_set = false;
+                        this.level_finish_time = t;
+                        this.current_level += 1;
+                    }
                     this.catched[i] = true;
                     this.catched_time[i]=t;
                 }
-
                 
             }
 
@@ -623,12 +721,18 @@ export class Final_Project extends Scene {
 
         //Draw Pond
         this.shapes.sheet.draw(context, program_state, pond_transform, this.materials.pond_material);
-
+        
+//=================================================LEVEL CLEAR!=================================================
+        if(t-this.level_finish_time <= 2 && t>2)
+        {
+            let d_t = t-this.level_finish_time;
+            let level_clear_transform = Mat4.identity().times(Mat4.scale(2,2,2)).times(Mat4.translation(-3,11+d_t*2,5.4+d_t*1).times(Mat4.rotation(-Math.PI/4,1,0,0)));
+            this.shapes.level_clear.draw(context,program_state, level_clear_transform, this.materials.level_clear);
+        }
 
     }
+
 }
-
-
 const Main_Scene = Final_Project;
 const Additional_Scenes = [];
 
