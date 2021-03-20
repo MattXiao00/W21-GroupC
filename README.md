@@ -21,7 +21,7 @@ If a fish is caught successfully, a score board on the top right of the screen w
 Implementation of fish horde:    
 
 Advanced feature implementation:  
-The collision detection of fish and fishing hook is implemented by creating a bounding sphere class. Each bounding sphere has a collision radius. Two bouding shperes objects collides if sum of their collision radius is less than their distance. And we simply treat every fish and fishing hook as a bounding sphere object.  
+The collision detection of fish and fishing hook is implemented by creating a bounding sphere class. Each bounding sphere has a collision radius. Two bouding shperes objects collides if sum of their collision radius is less than their distance. And we simply treat every fish and fishing hook as a bounding sphere object.    
 Reference:  
 code:  
 "Shape_From_File" class from obj-file-demo.js,  
