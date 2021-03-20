@@ -42,7 +42,8 @@ grass, https://free3d.com/3d-model/high-quality-grass-78178.html
 frog, https://free3d.com/3d-model/banjofrog-v1--699349.html  
 dirt texture, https://www.artstation.com/artwork/oO9oOw  
 wood texture, https://www.dreamstime.com/stock-illustration-beautiful-seamless-background-realistic-texture-wooden-boards-hand-drawn-natural-image93802343  
-welcome page background texture, https://www.mysensorium.ru/product/ler06965-igrovoy-nabor-obitateli-okeana-osminog
+welcome page background texture, https://www.mysensorium.ru/product/ler06965-igrovoy-nabor-obitateli-okeana-osminog  
+wooden frame, "level clear" text and fishing rod is created using Maya  
 
 
 
