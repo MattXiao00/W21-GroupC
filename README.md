@@ -16,5 +16,6 @@ User can press 'B' on the keyboard to enter the fishing pond.
 
 In the fishing pond, user can see a square pond surrounded by wooden frames, grass and some animals. User can also observe several randamly moving fish under the water surface and a fishing rod above them.  
 User can move fishing rod around by pressing keystrokes. A green fish hook at the end of the fishing rod will turn red it detects collision from some fish. At this moment, user can press 't' on the keyboard to catch fish.  
-If a fish is caught successfully, a score board on the top right of the screen will be updated.  
+If a fish is caught successfully, a score board on the top right of the screen will be updated. And if all fish in the pond have been caught, game will enter next stage with incresing difficulty(Fish will faster and there will be more fish in the pond).  
+
 
