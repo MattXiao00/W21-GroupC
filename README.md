@@ -14,4 +14,7 @@ The welcome page gives a brief introduction of how to play the game and presents
 Welcome page is implemented by constructing a big cube as background and using "text" shape from text-demo to show letters.  
 User can press 'B' on the keyboard to enter the fishing pond.  
 
-In the fishing pond, user can see a square pond surrounded by wooden frames, grass and some animals. 
+In the fishing pond, user can see a square pond surrounded by wooden frames, grass and some animals. User can also observe several randamly moving fish under the water surface and a fishing rod above them.  
+User can move fishing rod around by pressing keystrokes. A green fish hook at the end of the fishing rod will turn red it detects collision from some fish. At this moment, user can press 't' on the keyboard to catch fish.  
+If a fish is caught successfully, a score board on the top right of the screen will be updated.  
+
