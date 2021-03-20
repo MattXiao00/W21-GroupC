@@ -32,9 +32,9 @@ code for creating surface from surfaces-demo.js,
 3D objects:  
 Treasure, https://free3d.com/3d-model/aquarium-treasure-chest-v1--718043.html  
 crab, https://free3d.com/3d-model/-crab-v2--922900.html  
+fish(1), https://free3d.com/3d-model/tiger-shark-v1--102779.html  
 fish(2), https://free3d.com/3d-model/fish-v1--996288.html  
 fish(3), https://free3d.com/3d-model/3d-fish-model-low-poly-63627.html  
-fish(1), https://free3d.com/3d-model/tiger-shark-v1--102779.html  
 rock, https://free3d.com/3d-model/2-stones-84389.html  
 grass, https://free3d.com/3d-model/high-quality-grass-78178.html  
 frog, https://free3d.com/3d-model/banjofrog-v1--699349.html  
