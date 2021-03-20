@@ -19,6 +19,7 @@ User can move fishing rod around by pressing keystrokes. A green fish hook at th
 If a fish is caught successfully, a score board on the top right of the screen will be updated. And if all fish in the pond have been caught, game will enter next stage with incresing difficulty(Fish will faster and there will be more fish in the pond). 
 
 Implementation of fish horde:    
+First fix the total amount of fish at the start of each level. Then store the position info and other relative data in the form of global arrays. Then at each frame, update the position of each fish by modifying their position matrices by a series of sin and cos functions. The speed and spread of a fish depends on the type of the fish.
 
 Advanced feature implementation:  
 The collision detection of fish and fishing hook is implemented by creating a bounding sphere class. Each bounding sphere has a collision radius. Two bouding shperes objects collides if sum of their collision radius is less than their distance. And we simply treat every fish and fishing hook as a bounding sphere object.
